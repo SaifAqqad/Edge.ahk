@@ -1,4 +1,4 @@
-﻿class Chrome
+﻿class Edge
 {
 	static DebugPort := 9222
 	
@@ -11,32 +11,32 @@
 	}
 	
 	/*
-		Finds instances of chrome in debug mode and the ports they're running
+		Finds instances of edge in debug mode and the ports they're running
 		on. If no instances are found, returns a false value. If one or more
 		instances are found, returns an associative array where the keys are
 		the ports, and the values are the full command line texts used to start
 		the processes.
 		
-		One example of how this may be used would be to open chrome on a
-		different port if an instance of chrome is already open on the port
+		One example of how this may be used would be to open edge on a
+		different port if an instance of edge is already open on the port
 		you wanted to used.
 		
 		```
 		; If the wanted port is taken, use the largest taken port plus one
 		DebugPort := 9222
-		if (Chromes := Chrome.FindInstances()).HasKey(DebugPort)
-			DebugPort := Chromes.MaxIndex() + 1
-		ChromeInst := new Chrome(ProfilePath,,,, DebugPort)
+		if (Edges := Edge.FindInstances()).HasKey(DebugPort)
+			DebugPort := Edges.MaxIndex() + 1
+		EdgeInst := new Edge(ProfilePath,,,, DebugPort)
 		```
 		
 		Another use would be to scan for running instances and attach to one
 		instead of starting a new instance.
 		
 		```
-		if (Chromes := Chrome.FindInstances())
-			ChromeInst := {"base": Chrome, "DebugPort": Chromes.MinIndex()}
+		if (Edges := Edge.FindInstances())
+			EdgeInst := {"base": Edge, "DebugPort": Edges.MinIndex()}
 		else
-			ChromeInst := new Chrome(ProfilePath)
+			EdgeInst := new Edge(ProfilePath)
 		```
 	*/
 	FindInstances()
@@ -45,7 +45,7 @@
 		Out := {}
 		for Item in ComObjGet("winmgmts:")
 			.ExecQuery("SELECT CommandLine FROM Win32_Process"
-			. " WHERE Name = 'chrome.exe'")
+			. " WHERE Name = 'msedge.exe'")
 			if RegExMatch(Item.CommandLine, Needle, Match)
 				Out[Match1] := Item.CommandLine
 		return Out.MaxIndex() ? Out : False
@@ -53,29 +53,29 @@
 	
 	/*
 		ProfilePath - Path to the user profile directory to use. Will use the standard if left blank.
-		URLs        - The page or array of pages for Chrome to load when it opens
-		Flags       - Additional flags for chrome when launching
-		ChromePath  - Path to chrome.exe, will detect from start menu when left blank
-		DebugPort   - What port should Chrome's remote debugging server run on
+		URLs        - The page or array of pages for Edge to load when it opens
+		Flags       - Additional flags for edge when launching
+		EdgePath  - Path to edge.exe, will detect from start menu when left blank
+		DebugPort   - What port should Edge's remote debugging server run on
 	*/
-	__New(ProfilePath:="", URLs:="about:blank", Flags:="", ChromePath:="", DebugPort:="")
+	__New(ProfilePath:="", URLs:="about:blank", Flags:="", EdgePath:="", DebugPort:="")
 	{
 		; Verify ProfilePath
 		if (ProfilePath != "" && !InStr(FileExist(ProfilePath), "D"))
 			throw Exception("The given ProfilePath does not exist")
 		this.ProfilePath := ProfilePath
 		
-		; Verify ChromePath
-		if (ChromePath == "")
+		; Verify EdgePath
+		if (EdgePath == "")
 			; By using winmgmts to get the path of a shortcut file we fix an edge case where the path is retreived incorrectly
 			; if using the ahk executable with a different architecture than the OS (using 32bit AHK on a 64bit OS for example)
-			 ChromePath := ComObjGet("winmgmts:").ExecQuery("Select * from Win32_ShortcutFile where Name=""" StrReplace(A_StartMenuCommon "\Programs\Google Chrome.lnk", "\", "\\") """").ItemIndex(0).Target
-			; FileGetShortcut, %A_StartMenuCommon%\Programs\Google Chrome.lnk, ChromePath
-		if (ChromePath == "")
-			RegRead, ChromePath, HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\chrome.exe
-		if !FileExist(ChromePath)
-			throw Exception("Chrome could not be found")
-		this.ChromePath := ChromePath
+			 EdgePath := ComObjGet("winmgmts:").ExecQuery("Select * from Win32_ShortcutFile where Name=""" StrReplace(A_StartMenuCommon "\Programs\Microsoft Edge.lnk", "\", "\\") """").ItemIndex(0).Target
+			; FileGetShortcut, %A_StartMenuCommon%\Programs\Microsoft Edge.lnk, EdgePath
+		if (EdgePath == "")
+			RegRead, EdgePath, HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\msedge.exe
+		if !FileExist(EdgePath)
+			throw Exception("Edge could not be found")
+		this.EdgePath := EdgePath
 		
 		; Verify DebugPort
 		if (DebugPort != "")
@@ -91,7 +91,7 @@
 		for Index, URL in IsObject(URLs) ? URLs : [URLs]
 			URLString .= " " this.CliEscape(URL)
 		
-		Run, % this.CliEscape(ChromePath)
+		Run, % this.CliEscape(EdgePath)
 		. " --remote-debugging-port=" this.DebugPort
 		. (ProfilePath ? " --user-data-dir=" this.CliEscape(ProfilePath) : "")
 		. (Flags ? " " Flags : "")
@@ -101,7 +101,7 @@
 	}
 	
 	/*
-		End Chrome by terminating the process.
+		End Edge by terminating the process.
 	*/
 	Kill()
 	{
@@ -109,7 +109,7 @@
 	}
 	
 	/*
-		Queries chrome for a list of pages that expose a debug interface.
+		Queries edge for a list of pages that expose a debug interface.
 		In addition to standard tabs, these include pages such as extension
 		configuration pages.
 	*/
@@ -118,7 +118,7 @@
 		http := ComObjCreate("WinHttp.WinHttpRequest.5.1")
 		http.open("GET", "http://127.0.0.1:" this.DebugPort "/json")
 		http.send()
-		return this.Jxon_Load(http.responseText)
+		return this.JSON.Load(http.responseText)
 	}
 	
 	/*
@@ -166,7 +166,7 @@
 		Shorthand for GetPageBy("type", Type, "exact")
 		
 		The default type to search for is "page", which is the visible area of
-		a normal Chrome tab.
+		a normal Edge tab.
 	*/
 	GetPage(Index:=1, Type:="page", fnCallback:="", fnClose:="")
 	{
@@ -217,12 +217,12 @@
 			Params - An associative array of parameters to be provided to the
 				endpoint. For example:
 				PageInst.Call("Page.printToPDF", {"scale": 0.5 ; Numeric Value
-					, "landscape": Chrome.Jxon_True() ; Boolean Value
+					, "landscape": Edge.Jxon_True() ; Boolean Value
 					, "pageRanges: "1-5, 8, 11-13"}) ; String value
 				PageInst.Call("Page.navigate", {"url": "https://autohotkey.com/"})
 			
 			WaitForResponse - Whether to block until a response is received from
-				Chrome, which is necessary to receive a return value, or whether
+				Edge, which is necessary to receive a return value, or whether
 				to continue on with the script without waiting for a response.
 		*/
 		Call(DomainAndMethod, Params:="", WaitForResponse:=True)
@@ -233,7 +233,7 @@
 			; Use a temporary variable for ID in case more calls are made
 			; before we receive a response.
 			ID := this.ID += 1
-			this.ws.Send(Chrome.Jxon_Dump({"id": ID
+			this.ws.Send(Edge.JSON.Dump({"id": ID
 			, "params": Params ? Params : {}
 			, "method": DomainAndMethod}))
 			
@@ -248,7 +248,7 @@
 			; Get the response, check if it's an error
 			response := this.responses.Delete(ID)
 			if (response.error)
-				throw Exception("Chrome indicated error in response",, Chrome.Jxon_Dump(response.error))
+				throw Exception("Edge indicated error in response",, Edge.JSON.Dump(response.error))
 			
 			return response.result
 		}
@@ -266,17 +266,17 @@
 			{
 				"expression": JS,
 				"objectGroup": "console",
-				"includeCommandLineAPI": Chrome.Jxon_True(),
-				"silent": Chrome.Jxon_False(),
-				"returnByValue": Chrome.Jxon_False(),
-				"userGesture": Chrome.Jxon_True(),
-				"awaitPromise": Chrome.Jxon_False()
+				"includeCommandLineAPI": Edge.JSON.True,
+				"silent": Edge.JSON.False,
+				"returnByValue": Edge.JSON.False,
+				"userGesture": Edge.JSON.True,
+				"awaitPromise": Edge.JSON.False
 			}
 			))
 			
 			if (response.exceptionDetails)
 				throw Exception(response.result.description, -1
-					, Chrome.Jxon_Dump({"Code": JS
+					, Edge.JSON.Dump({"Code": JS
 					, "exceptionDetails": response.exceptionDetails}))
 			
 			return response.result
@@ -313,7 +313,7 @@
 			}
 			else if (EventName == "Message")
 			{
-				data := Chrome.Jxon_Load(Event.data)
+				data := Edge.JSON.Load(Event.data)
 				
 				; Run the callback routine
 				fnCallback := this.fnCallback
@@ -355,5 +355,5 @@
 		#Include %A_LineFile%\..\lib\WebSocket.ahk\WebSocket.ahk
 	}
 	
-	#Include %A_LineFile%\..\lib\AutoHotkey-JSON\Jxon.ahk
+	#Include %A_LineFile%\..\lib\JSON\Dist\JSON.ahk
 }
