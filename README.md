@@ -39,7 +39,7 @@ https://chromedevtools.github.io/devtools-protocol/
 
 #### You need to clone the repository with the submodules using: 
 ```
-git pull --recurse-submodules https://github.com/SaifAqqad/Edge.ahk.git
+git clone --recurse-submodules https://github.com/SaifAqqad/Edge.ahk.git
 ```
 
 To start using this library you need to create an instance of the class `Edge`. `Edge`'s constructor accepts four optional parameters:
