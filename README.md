@@ -37,6 +37,11 @@ https://chromedevtools.github.io/devtools-protocol/
 
 ## Using this Library
 
+#### You need to clone the repository with the submodules using: 
+```
+git pull --recurse-submodules https://github.com/SaifAqqad/Edge.ahk.git
+```
+
 To start using this library you need to create an instance of the class `Edge`. `Edge`'s constructor accepts four optional parameters:
 
 1. **ProfilePath** - This is the path, relative to the working directory, that your Edge user profile is located. If an empty folder is given, edge will generate a new user profile in it. **When this parameter is omitted, Edge will be launched under the default user profile.** However, if edge is already running under that user profile out of debug mode, this will fail. Because of this, **it is recommended to always launch Edge under an alternate user profile.**
