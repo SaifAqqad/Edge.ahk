@@ -1,6 +1,6 @@
 # Edge.ahk
 
-Automate Google Edge using native AutoHotkey.
+Automate Microsoft Edge using native AutoHotkey.
 
 
 ## How it works
