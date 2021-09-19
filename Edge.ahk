@@ -204,6 +204,11 @@
 			while !this.Connected
 				Sleep, 50
 		}
+
+		Await(promiseId){
+			return this.Call("Runtime.awaitPromise", {"promiseObjectId": promiseId
+														 ,"returnByValue": Edge.JSON.True}).result
+		}
 		
 		/*
 			Calls the specified endpoint and provides it with the given
