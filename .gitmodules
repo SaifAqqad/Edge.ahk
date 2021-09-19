@@ -1,3 +1,6 @@
 [submodule "lib/WebSocket.ahk"]
 	path = lib/WebSocket.ahk
 	url = https://github.com/G33kDude/WebSocket.ahk.git
+[submodule "lib/JSON"]
+	path = lib/JSON
+	url = https://github.com/G33kDude/cJson.ahk.git
