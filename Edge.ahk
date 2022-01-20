@@ -11,6 +11,16 @@
 	}
 	
 	/*
+
+	*/
+	GetFullPathName(path) {
+		cc := DllCall("GetFullPathName", "str", path, "uint", 0, "ptr", 0, "ptr", 0, "uint")
+		VarSetCapacity(buf, cc*(A_IsUnicode?2:1))
+		DllCall("GetFullPathName", "str", path, "uint", cc, "str", buf, "ptr", 0, "uint")
+		return buf
+	}
+
+	/*
 		Finds instances of edge in debug mode and the ports they're running
 		on. If no instances are found, returns a false value. If one or more
 		instances are found, returns an associative array where the keys are
@@ -61,9 +71,11 @@
 	__New(ProfilePath:="", URLs:="about:blank", Flags:="", EdgePath:="", DebugPort:="")
 	{
 		; Verify ProfilePath
-		if (ProfilePath != "" && !InStr(FileExist(ProfilePath), "D"))
-			throw Exception("The given ProfilePath does not exist")
-		this.ProfilePath := ProfilePath
+		if (ProfilePath != "" && !InStr(FileExist(ProfilePath), "D")){
+			Try FileRemoveDir, % ProfilePath, 1
+			FileCreateDir, % ProfilePath
+		}
+		this.ProfilePath := this.GetFullPathName(ProfilePath)
 		
 		; Verify EdgePath
 		if (EdgePath == "")
@@ -93,7 +105,7 @@
 		
 		Run, % this.CliEscape(EdgePath)
 		. " --remote-debugging-port=" this.DebugPort
-		. (ProfilePath ? " --user-data-dir=" this.CliEscape(ProfilePath) : "")
+		. (this.ProfilePath ? " --user-data-dir=" this.CliEscape(this.ProfilePath) : "")
 		. (Flags ? " " Flags : "")
 		. URLString
 		,,, OutputVarPID
@@ -238,9 +250,7 @@
 			; Use a temporary variable for ID in case more calls are made
 			; before we receive a response.
 			ID := this.ID += 1
-			this.ws.Send(Edge.JSON.Dump({"id": ID
-			, "params": Params ? Params : {}
-			, "method": DomainAndMethod}))
+			this.ws.Send(StrReplace(Edge.JSON.Dump({"id": ID, "params": Params ? Params : {}, "method": DomainAndMethod}),"[]",chr(123)chr(125)))
 			
 			if !WaitForResponse
 				return
